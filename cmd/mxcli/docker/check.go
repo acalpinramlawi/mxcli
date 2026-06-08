@@ -60,12 +60,19 @@ func Check(opts CheckOptions) error {
 	}
 	fmt.Fprintf(w, "Using mx: %s\n", mxPath)
 
+	// Resolve to absolute path — mx.exe requires an absolute path and will
+	// throw ArgumentNullException if given a relative one.
+	absProjectPath := opts.ProjectPath
+	if p, err := filepath.Abs(opts.ProjectPath); err == nil {
+		absProjectPath = p
+	}
+
 	// Run mx update-widgets to normalize pluggable widget definitions.
 	// This prevents false CE0463 ("widget definition changed") errors caused
 	// by mismatch between widget Object properties and Type PropertyTypes.
 	if !opts.SkipUpdateWidgets {
 		fmt.Fprintf(w, "Updating widget definitions in %s...\n", opts.ProjectPath)
-		uwCmd := exec.Command(mxPath, "update-widgets", opts.ProjectPath)
+		uwCmd := exec.Command(mxPath, "update-widgets", absProjectPath)
 		uwCmd.Stdout = w
 		uwCmd.Stderr = stderr
 		PrepareMxCommand(uwCmd)
@@ -79,7 +86,7 @@ func Check(opts CheckOptions) error {
 
 	// Run mx check
 	fmt.Fprintf(w, "Checking project %s...\n", opts.ProjectPath)
-	cmd := exec.Command(mxPath, "check", opts.ProjectPath)
+	cmd := exec.Command(mxPath, "check", absProjectPath)
 	cmd.Stdout = w
 	cmd.Stderr = stderr
 	PrepareMxCommand(cmd)
