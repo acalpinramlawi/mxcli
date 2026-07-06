@@ -573,8 +573,17 @@ func (e *PluggableWidgetEngine) resolveMapping(mapping PropertyMapping, w *ast.W
 		}
 
 	case "Association":
-		if attr := w.GetAttribute(); attr != "" {
-			ctx.AssocPath = e.pageBuilder.resolveAssociationPath(attr)
+		// The association mode's ref comes from the widget's own Association:
+		// property (e.g. COMBOBOX cb (Association: Module.Assoc, ...)); fall back
+		// to Attribute: for backward compatibility. Previously this only read
+		// Attribute:, so `Association:` silently dropped and the widget failed
+		// mx check with "Property 'Entity' is required".
+		assoc := w.GetStringProp("Association")
+		if assoc == "" {
+			assoc = w.GetAttribute()
+		}
+		if assoc != "" {
+			ctx.AssocPath = e.pageBuilder.resolveAssociationPath(assoc)
 		}
 		ctx.EntityName = e.pageBuilder.entityContext
 		if ctx.AssocPath != "" && ctx.EntityName == "" {
